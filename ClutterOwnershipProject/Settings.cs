@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.ComponentModel;
 
 
@@ -19,7 +19,7 @@ namespace ClutterOwnershipSynthesisPatcher
         [JsonProperty]
         public List<string> ExcludeNameTerms { get; set; } =
         [
-            
+
         ];
 
         [DisplayName("Plugins to exclude")]
@@ -27,7 +27,7 @@ namespace ClutterOwnershipSynthesisPatcher
         [JsonProperty]
         public List<string> ExcludePlugins { get; set; } =
         [
-            "Vigilant", "Underground", "HearthFire", "Glenmoril", "Sewers", 
+            "Vigilant", "Underground", "HearthFire", "Glenmoril", "Sewers",
         ];
 
         [DisplayName("Cells to exclude")]
