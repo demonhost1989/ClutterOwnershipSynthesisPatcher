@@ -168,6 +168,7 @@ namespace ClutterOwnershipSynthesisPatcher
             var settings = LoadRunSettings(state);
 
             var baseInfoCache = new Dictionary<FormKey, BaseInfo>();
+            var ownerEdidCache = new Dictionary<FormKey, string?>();
             var seen = new HashSet<FormKey>();
 
             // Tallies, keyed by the containing cell's FormKey.
@@ -178,9 +179,11 @@ namespace ClutterOwnershipSynthesisPatcher
             var candidatesByCell = new Dictionary<FormKey, List<(IModContext<ISkyrimMod, ISkyrimModGetter, IPlacedObject, IPlacedObjectGetter> Context, string EditorID)>>();
 
             int alreadyOwnedCount = 0;
+            int excludedOwnerVotesCount = 0;
             int excludedCount = 0;
             var excludedCropsByPlugin = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             var excludedCellsByRule = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            var excludedLocTypesByRule = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
             var excludedNamesByRule = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
             PrintShortDivider();
@@ -234,6 +237,35 @@ namespace ClutterOwnershipSynthesisPatcher
                     }
                 }
 
+                // Location-type exclusion (matched against LocType-prefixed keywords only, e.g.
+                // LocTypeDungeon — deliberately ignoring unrelated keyword data like Civil War or
+                // world-interaction flags that can share vocabulary with these terms).
+                if (!cellExcluded && settings.ExcludeLocTypeRules.Count > 0)
+                {
+                    var location = containingCell.Location.TryResolve(state.LinkCache);
+                    var keywordEdids = location?.Keywords?
+                        .Select(k => k.TryResolve(state.LinkCache)?.EditorID)
+                        .Where(e => e != null && e.StartsWith("LocType", StringComparison.OrdinalIgnoreCase))
+                        .Select(e => e!)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                    if (keywordEdids != null && keywordEdids.Count > 0)
+                    {
+                        foreach (var rule in settings.ExcludeLocTypeRules)
+                        {
+                            if (keywordEdids.Any(k => k.Contains(rule, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                cellExcluded = true;
+                                if (!excludedLocTypesByRule.TryGetValue(rule, out var list))
+                                    excludedLocTypesByRule[rule] = list = [];
+
+                                list.Add(itemEdid);
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 if (cellExcluded)
                 {
                     excludedCount++;
@@ -271,19 +303,37 @@ namespace ClutterOwnershipSynthesisPatcher
                     var ownerFormKeyNullable = placedObject.Owner.FormKeyNullable;
                     if (ownerFormKeyNullable is { } ownerFormKey)
                     {
-                        if (!ownerCountsByCell.TryGetValue(cellFormKey, out var ownerCounts))
-                            ownerCountsByCell[cellFormKey] = ownerCounts = [];
+                        if (!ownerEdidCache.TryGetValue(ownerFormKey, out var ownerEdid))
+                        {
+                            ownerEdid = state.LinkCache.TryResolve<IMajorRecordGetter>(ownerFormKey, out var ownerRec)
+                                ? ownerRec.EditorID
+                                : null;
+                            ownerEdidCache[ownerFormKey] = ownerEdid;
+                        }
 
-                        ownerCounts.TryGetValue(ownerFormKey, out var count);
-                        ownerCounts[ownerFormKey] = count + 1;
+                        bool ownerIsExcluded = ownerEdid != null
+                            && settings.ExcludeOwnerNames.Any(term => ownerEdid.Contains(term, StringComparison.OrdinalIgnoreCase));
 
-                        var rankKey = (cellFormKey, ownerFormKey);
-                        if (!rankCountsByCellOwner.TryGetValue(rankKey, out var rankCounts))
-                            rankCountsByCellOwner[rankKey] = rankCounts = [];
+                        if (!ownerIsExcluded)
+                        {
+                            if (!ownerCountsByCell.TryGetValue(cellFormKey, out var ownerCounts))
+                                ownerCountsByCell[cellFormKey] = ownerCounts = [];
 
-                        var factionRank = placedObject.FactionRank ?? 0;
-                        rankCounts.TryGetValue(factionRank, out var rankCount);
-                        rankCounts[factionRank] = rankCount + 1;
+                            ownerCounts.TryGetValue(ownerFormKey, out var count);
+                            ownerCounts[ownerFormKey] = count + 1;
+
+                            var rankKey = (cellFormKey, ownerFormKey);
+                            if (!rankCountsByCellOwner.TryGetValue(rankKey, out var rankCounts))
+                                rankCountsByCellOwner[rankKey] = rankCounts = [];
+
+                            var factionRank = placedObject.FactionRank ?? 0;
+                            rankCounts.TryGetValue(factionRank, out var rankCount);
+                            rankCounts[factionRank] = rankCount + 1;
+                        }
+                        else
+                        {
+                            excludedOwnerVotesCount++;
+                        }
                     }
 
                     continue;
@@ -307,6 +357,7 @@ namespace ClutterOwnershipSynthesisPatcher
             int belowThresholdCount = 0;
             var patchedItemsByCell = new Dictionary<string, List<(string Item, string Plugin, string OwnerLabel)>>(StringComparer.OrdinalIgnoreCase);
             var patchedItemTypeCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var cellVoteInfo = new Dictionary<string, (int WinningVotes, int TotalVotes)>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var (cellFormKey, candidates) in candidatesByCell)
             {
@@ -341,8 +392,20 @@ namespace ClutterOwnershipSynthesisPatcher
                     ? (reportCell.EditorID ?? "Unknown cell")
                     : "Unknown cell";
 
+                // How many of the cell's owned MISC/CONT/ALCH objects actually voted for the winning
+                // owner, out of how many owned objects (that counted as votes) were in the cell at all.
+                ownerCounts.TryGetValue(majorityOwnerFormKey, out var winningVotes);
+                cellVoteInfo[cellLabelForReport] = (winningVotes, totalOwnedInCell);
+
                 foreach (var (context, itemEdid) in candidates)
                 {
+                    // Defensive re-check: candidates should already be guaranteed unowned by pass 1
+                    // (owned objects hit `continue` before ever being queued), but this guards against
+                    // a future change accidentally breaking that invariant — we never want to overwrite
+                    // an existing owner, so if this ever fires, skip rather than risk clobbering data.
+                    if (!context.Record.Owner.IsNull)
+                        continue;
+
                     var patchObject = context.GetOrAddAsOverride(state.PatchMod);
                     patchObject.Owner.SetTo(ownerRecord);
                     patchObject.FactionRank = rankToApply;
@@ -361,11 +424,14 @@ namespace ClutterOwnershipSynthesisPatcher
             PrintReport(
                 patchedItemsByCell,
                 patchedItemTypeCounts,
+                cellVoteInfo,
                 excludedCropsByPlugin,
                 excludedCellsByRule,
+                excludedLocTypesByRule,
                 excludedNamesByRule,
                 patchedCount,
                 alreadyOwnedCount,
+                excludedOwnerVotesCount,
                 noOwnershipDataCount,
                 belowThresholdCount,
                 excludedCount);
@@ -424,11 +490,14 @@ namespace ClutterOwnershipSynthesisPatcher
         private static void PrintReport(
             Dictionary<string, List<(string Item, string Plugin, string OwnerLabel)>> patchedItemsByCell,
             Dictionary<string, int> patchedItemTypeCounts,
+            Dictionary<string, (int WinningVotes, int TotalVotes)> cellVoteInfo,
             Dictionary<string, List<string>> excludedItemsByPlugin,
             Dictionary<string, List<string>> excludedCellsByRule,
+            Dictionary<string, List<string>> excludedLocTypesByRule,
             Dictionary<string, List<string>> excludedNamesByRule,
             int patchedCount,
             int alreadyOwnedCount,
+            int excludedOwnerVotesCount,
             int noOwnershipDataCount,
             int belowThresholdCount,
             int excludedCount)
@@ -446,7 +515,11 @@ namespace ClutterOwnershipSynthesisPatcher
                 var cellLabel = kvp.Key;
                 var items = kvp.Value;
 
-                ConsoleWriteLine($"{cellLabel}   ({items.Count} patched)");
+                var voteLabel = cellVoteInfo.TryGetValue(cellLabel, out var votes)
+                    ? $"   [decided by {votes.WinningVotes}/{votes.TotalVotes} owned objects]"
+                    : "";
+
+                ConsoleWriteLine($"{cellLabel}   ({items.Count} patched){voteLabel}");
 
                 var byOwner = items
                     .GroupBy(a => a.OwnerLabel)
@@ -490,6 +563,12 @@ namespace ClutterOwnershipSynthesisPatcher
                     combined.Add((kv.Key, kv.Value.Count, "cell"));
             }
 
+            foreach (var kv in excludedLocTypesByRule)
+            {
+                if (kv.Value.Count > 0)
+                    combined.Add((kv.Key, kv.Value.Count, "loctype"));
+            }
+
             foreach (var kv in excludedNamesByRule)
             {
                 if (kv.Value.Count > 0)
@@ -510,6 +589,7 @@ namespace ClutterOwnershipSynthesisPatcher
             {
                 ("Objects have been assigned owners", patchedCount, true),
                 ("Objects were already owned", alreadyOwnedCount, false),
+                ("Owned objects were excluded from voting by ExcludeOwnerNames", excludedOwnerVotesCount, false),
                 ("Objects were in a cell with no ownership data at all", noOwnershipDataCount, false),
                 ("Objects were in a cell below the minimum-owned threshold", belowThresholdCount, false),
                 ("Objects were excluded by rules", excludedCount, false),
@@ -547,7 +627,7 @@ namespace ClutterOwnershipSynthesisPatcher
                     "settings.json",
                     out LazySettings)
                 .AddPatch<ISkyrimMod, ISkyrimModGetter>(RunPatch)
-                .SetTypicalOpen(GameRelease.SkyrimSE, "ClutterOwnership.esp")
+                .SetTypicalOpen(GameRelease.SkyrimSE, "LooseObjectOwnershipOverrides.esp")
                 .Run(args);
         }
     }
