@@ -14,7 +14,7 @@ namespace ClutterOwnershipSynthesisPatcher
         [JsonProperty]
         public List<string> ExcludeOwnerNames { get; set; } =
         [
-            "Player", "PlayerFaction", "CW", "Bandit", "Hagraven", "Fort", "Serpent", "Forelhost",
+            "Player", "PlayerFaction", "CW", "Bandit", "Hagraven", "Fort", "Hunter", "Draugr", 
         ];
 
         [DisplayName("Minimum owned objects required for a majority")]
