@@ -89,7 +89,7 @@ namespace ClutterOwnershipSynthesisPatcher
         }
 
         // ------------------------------------------------------------------
-        // Base record classification (MISC / CONT / ALCH / other)
+        // Base record classification (MISC / CONT / ALCH / AMMO / BOOK / SCRL / other)
         // ------------------------------------------------------------------
 
         private enum RecordKind
@@ -98,6 +98,9 @@ namespace ClutterOwnershipSynthesisPatcher
             MiscItem,
             Container,
             Ingestible,
+            Ammunition,
+            Book,
+            Scroll,
         }
 
         private readonly record struct BaseInfo(RecordKind Kind, string? EditorID);
@@ -115,6 +118,9 @@ namespace ClutterOwnershipSynthesisPatcher
                 IMiscItemGetter => RecordKind.MiscItem,
                 IContainerGetter => RecordKind.Container,
                 IIngestibleGetter => RecordKind.Ingestible,
+                IAmmunitionGetter => RecordKind.Ammunition,
+                IBookGetter => RecordKind.Book,
+                IScrollGetter => RecordKind.Scroll,
                 _ => RecordKind.Other,
             };
 
@@ -175,7 +181,7 @@ namespace ClutterOwnershipSynthesisPatcher
             var ownerCountsByCell = new Dictionary<FormKey, Dictionary<FormKey, int>>();
             var rankCountsByCellOwner = new Dictionary<(FormKey Cell, FormKey Owner), Dictionary<int, int>>();
 
-            // Unowned MISC/CONT/ALCH candidates, bucketed by containing cell, waiting for pass 2.
+            // Unowned candidates of an eligible record type, bucketed by containing cell, waiting for pass 2.
             var candidatesByCell = new Dictionary<FormKey, List<(IModContext<ISkyrimMod, ISkyrimModGetter, IPlacedObject, IPlacedObjectGetter> Context, string EditorID)>>();
 
             int alreadyOwnedCount = 0;
@@ -191,7 +197,7 @@ namespace ClutterOwnershipSynthesisPatcher
             PrintShortDivider();
 
             // ---- Pass 1: classify every placed object, tally existing ownership, and collect
-            // unowned MISC/CONT/ALCH candidates per cell. ----
+            // unowned candidates of eligible record types per cell. ----
             foreach (var context in state.LoadOrder.PriorityOrder.PlacedObject().WinningContextOverrides(state.LinkCache))
             {
                 var placedObject = context.Record;
@@ -339,7 +345,7 @@ namespace ClutterOwnershipSynthesisPatcher
                     continue;
                 }
 
-                // Unowned MISC/CONT/ALCH candidate — queued for pass 2.
+                // Unowned candidate of an eligible record type — queued for pass 2.
                 if (!candidatesByCell.TryGetValue(cellFormKey, out var candidateList))
                     candidatesByCell[cellFormKey] = candidateList = [];
 
@@ -392,7 +398,7 @@ namespace ClutterOwnershipSynthesisPatcher
                     ? (reportCell.EditorID ?? "Unknown cell")
                     : "Unknown cell";
 
-                // How many of the cell's owned MISC/CONT/ALCH objects actually voted for the winning
+                // How many of the cell's owned eligible objects actually voted for the winning
                 // owner, out of how many owned objects (that counted as votes) were in the cell at all.
                 ownerCounts.TryGetValue(majorityOwnerFormKey, out var winningVotes);
                 cellVoteInfo[cellLabelForReport] = (winningVotes, totalOwnedInCell);
@@ -610,7 +616,7 @@ namespace ClutterOwnershipSynthesisPatcher
 
             PrintDivider();
             ConsoleWriteLine("Patching is complete! Scroll up to read a report on what was patched and why anything was skipped.");
-            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/CONT/ALCH objects to learn a pattern from.");
+            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/CONT/ALCH/AMMO/BOOK/SCRL objects to learn a pattern from.");
             ConsoleWriteLine("\"Below threshold\" means the cell had SOME ownership data, but fewer owned objects than MinimumOwnedObjectsForMajority.");
             PrintDivider();
         }
@@ -627,7 +633,7 @@ namespace ClutterOwnershipSynthesisPatcher
                     "settings.json",
                     out LazySettings)
                 .AddPatch<ISkyrimMod, ISkyrimModGetter>(RunPatch)
-                .SetTypicalOpen(GameRelease.SkyrimSE, "LooseObjectOwnershipOverrides.esp")
+                .SetTypicalOpen(GameRelease.SkyrimSE, "ClutterOwnership.esp")
                 .Run(args);
         }
     }

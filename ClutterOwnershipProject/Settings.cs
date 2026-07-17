@@ -18,7 +18,7 @@ namespace ClutterOwnershipSynthesisPatcher
         ];
 
         [DisplayName("Minimum owned objects required for a majority")]
-        [Description("A cell needs at least this many already-owned MISC/CONT/ALCH objects before its majority owner is trusted and applied to the unowned ones in that cell. Set to 1 to trust even a single owned object.")]
+        [Description("A cell needs at least this many already-owned objects before its majority owner is trusted and applied to the unowned ones in that cell. Set to 1 to trust even a single owned object.")]
         [JsonProperty]
         public int MinimumOwnedObjectsForMajority { get; set; } = 1;
 
@@ -31,7 +31,7 @@ namespace ClutterOwnershipSynthesisPatcher
         ];
 
         [DisplayName("Plugins to exclude")]
-        [Description("ExcludePlugins")]
+        [Description("Substring match against the plugin's name. Plugins matching any of these terms will be ignored entirely.")]
         [JsonProperty]
         public List<string> ExcludePlugins { get; set; } =
         [
@@ -39,7 +39,7 @@ namespace ClutterOwnershipSynthesisPatcher
         ];
 
         [DisplayName("Cells to exclude")]
-        [Description("ExcludeCellRules")]
+        [Description("Substring match against the cell's EditorID. Cells matching any of these terms will be ignored entirely.")]
         [JsonProperty]
         public List<string> ExcludeCellRules { get; set; } =
         [
