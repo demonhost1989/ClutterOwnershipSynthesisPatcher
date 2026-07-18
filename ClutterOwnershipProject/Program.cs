@@ -90,7 +90,7 @@ namespace ClutterOwnershipSynthesisPatcher
         }
 
         // ------------------------------------------------------------------
-        // Base record classification (MISC / CONT / ALCH / BOOK / SCRL / other)
+        // Base record classification (MISC / CONT / ALCH / BOOK / AMMO / SCRL / other)
         // ------------------------------------------------------------------
 
         private enum RecordKind
@@ -100,6 +100,7 @@ namespace ClutterOwnershipSynthesisPatcher
             Container,
             Ingestible,
             Book,
+            Ammunition,
             Scroll,
         }
 
