@@ -28,12 +28,12 @@ namespace ClutterOwnershipProject
         public List<ManualOwnershipRule> ManualCellOwners { get; set; } =
         [
             new() { Cell = "SolitudeBluePalace", Owner = "SolitudeBluePalaceFaction" },
-            new() { Cell = "WhiterunDragonsreach", Owner = "WhiterunJarlOwnershipFaction" }
-            new() { Cell = "WBPT", Owner = "SolitudeBluePalaceFaction" }
-            new() { Cell = "Dawnguard", Owner = "DLC1DawnguardFaction" }
-            new() { Cell = "MarkarthSide", Owner = "TownMarkarthSideFaction" }
-            new() { Cell = "Nightgate", Owner = "Hadring" }
-            new() { Cell = "BlackBriarLodge", Owner = "RiftenBlackBriarHouseFaction" }
+            new() { Cell = "WhiterunDragonsreach", Owner = "WhiterunJarlOwnershipFaction" },
+            new() { Cell = "WBPT", Owner = "SolitudeBluePalaceFaction" },
+            new() { Cell = "Dawnguard", Owner = "DLC1DawnguardFaction" },
+            new() { Cell = "MarkarthSide", Owner = "TownMarkarthSideFaction" },
+            new() { Cell = "Nightgate", Owner = "Hadring" },
+            new() { Cell = "BlackBriarLodge", Owner = "RiftenBlackBriarHouseFaction" },
         ];
         
         [DisplayName("Names to exclude")]
