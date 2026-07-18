@@ -230,7 +230,15 @@ namespace ClutterOwnershipSynthesisPatcher
 
                 var cellEdid = containingCell.EditorID ?? "Unknown cell";
                 var cellFormKey = containingCell.FormKey;
-
+                
+                // Manual ownership rules trump the cell-level exclusion rules — a cell the user
+                // explicitly mapped to an owner is patched even if a cell or location-type
+                // exclusion would normally skip it (name/plugin exclusions still apply).
+                bool hasManualRule = settings.ManualCellOwners.Any(r =>
+                    !string.IsNullOrWhiteSpace(r.Cell)
+                    && !string.IsNullOrWhiteSpace(r.Owner)
+                    && cellEdid.Contains(r.Cell, StringComparison.OrdinalIgnoreCase));
+                
                 // Cell exclusion.
                 bool cellExcluded = false;
                 foreach (var rule in settings.ExcludeCellRules)
