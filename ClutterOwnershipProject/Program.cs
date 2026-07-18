@@ -1,3 +1,4 @@
+using ClutterOwnershipProject;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Cache;
@@ -171,6 +172,9 @@ namespace ClutterOwnershipSynthesisPatcher
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
+            // Flag the output plugin as a Master (ESM) on every build.
+            state.PatchMod.ModHeader.Flags |= SkyrimModHeader.HeaderFlag.Master;
+
             var settings = LoadRunSettings(state);
 
             var baseInfoCache = new Dictionary<FormKey, BaseInfo>();

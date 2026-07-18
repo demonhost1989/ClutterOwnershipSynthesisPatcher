@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using System.ComponentModel;
 
 
-namespace ClutterOwnershipSynthesisPatcher
+namespace ClutterOwnershipProject
 {
 
     [JsonObject]
@@ -35,7 +35,7 @@ namespace ClutterOwnershipSynthesisPatcher
         [JsonProperty]
         public List<string> ExcludePlugins { get; set; } =
         [
-            "Vigilant", "SkyrimUnderground", "HearthFire", "Glenmoril",
+            "Vigilant", "SkyrimUnderground", "HearthFire", "Glenmoril", "GodsAndWorship",
         ];
 
         [DisplayName("Cells to exclude")]
