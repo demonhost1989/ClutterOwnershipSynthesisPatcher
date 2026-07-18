@@ -90,7 +90,7 @@ namespace ClutterOwnershipSynthesisPatcher
         }
 
         // ------------------------------------------------------------------
-        // Base record classification (MISC / CONT / ALCH / AMMO / BOOK / SCRL / other)
+        // Base record classification (MISC / CONT / ALCH / BOOK / SCRL / other)
         // ------------------------------------------------------------------
 
         private enum RecordKind
@@ -99,7 +99,6 @@ namespace ClutterOwnershipSynthesisPatcher
             MiscItem,
             Container,
             Ingestible,
-            Ammunition,
             Book,
             Scroll,
         }
@@ -119,7 +118,6 @@ namespace ClutterOwnershipSynthesisPatcher
                 IMiscItemGetter => RecordKind.MiscItem,
                 IContainerGetter => RecordKind.Container,
                 IIngestibleGetter => RecordKind.Ingestible,
-                IAmmunitionGetter => RecordKind.Ammunition,
                 IBookGetter => RecordKind.Book,
                 IScrollGetter => RecordKind.Scroll,
                 _ => RecordKind.Other,
