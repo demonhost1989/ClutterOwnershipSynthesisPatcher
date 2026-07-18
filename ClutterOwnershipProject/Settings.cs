@@ -6,6 +6,20 @@ namespace ClutterOwnershipProject
 {
 
     [JsonObject]
+    public class ManualOwnershipRule
+    {
+        [DisplayName("Cell")]
+        [Description("Substring match against the cell's EditorID.")]
+        [JsonProperty]
+        public string Cell { get; set; } = "";
+
+        [DisplayName("Owner")]
+        [Description("EditorID of the NPC or Faction to assign as owner.")]
+        [JsonProperty]
+        public string Owner { get; set; } = "";
+    }
+
+    [JsonObject]
     public class Settings
     {
 
