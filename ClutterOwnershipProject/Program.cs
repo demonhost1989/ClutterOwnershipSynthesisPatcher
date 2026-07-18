@@ -657,7 +657,7 @@ namespace ClutterOwnershipSynthesisPatcher
 
             PrintDivider();
             ConsoleWriteLine("Patching is complete! Scroll up to read a report on what was patched and why anything was skipped.");
-            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/CONT/ALCH/AMMO/BOOK/SCRL objects to learn a pattern from.");
+            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/CONT/ALCH/BOOK/SCRL objects to learn a pattern from.");
             ConsoleWriteLine("\"Below threshold\" means the cell had SOME ownership data, but fewer owned objects than MinimumOwnedObjectsForMajority.");
             PrintDivider();
         }
