@@ -14,14 +14,28 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeOwnerNames { get; set; } =
         [
-            "Player", "PlayerFaction", "CW", "Bandit", "Hagraven", "Fort", "Hunter", "Draugr", 
+            "Player", "PlayerFaction", "CW", "Bandit", "Hagraven", "Fort", "Hunter", "Draugr", "JobMerchantFaction", "Fake", 
         ];
 
         [DisplayName("Minimum owned objects required for a majority")]
         [Description("A cell needs at least this many already-owned objects before its majority owner is trusted and applied to the unowned ones in that cell. Set to 1 to trust even a single owned object.")]
         [JsonProperty]
         public int MinimumOwnedObjectsForMajority { get; set; } = 1;
-
+        
+        [DisplayName("Manual cell ownership")]
+        [Description("Cells listed here skip the majority-owner vote entirely: every unowned eligible object in a matching cell (substring match against the cell's EditorID) is assigned the given owner (exact EditorID of an NPC or Faction). These rules also override the cell and location-type exclusion rules, though name and plugin exclusions still apply.")]
+        [JsonProperty]
+        public List<ManualOwnershipRule> ManualCellOwners { get; set; } =
+        [
+            new() { Cell = "SolitudeBluePalace", Owner = "SolitudeBluePalaceFaction" },
+            new() { Cell = "WhiterunDragonsreach", Owner = "WhiterunJarlOwnershipFaction" }
+            new() { Cell = "WBPT", Owner = "SolitudeBluePalaceFaction" }
+            new() { Cell = "Dawnguard", Owner = "HunterFaction" }
+            new() { Cell = "MarkarthSide", Owner = "TownMarkarthSideFaction" }
+            new() { Cell = "Nightgate", Owner = "Hadring" }
+            new() { Cell = "BlackBriarLodge", Owner = "RiftenBlackBriarHouseFaction" }
+        ];
+        
         [DisplayName("Names to exclude")]
         [Description("Match against the placed object's Base EditorID. Loose items you never want touched regardless of cell ownership (e.g. Gold, Lockpicks, quest-critical keys).")]
         [JsonProperty]
@@ -43,7 +57,7 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeCellRules { get; set; } =
         [
-            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters",
+            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters", "DrelasCottage", 
         ];
 
         [DisplayName("Location Types to exclude")]
