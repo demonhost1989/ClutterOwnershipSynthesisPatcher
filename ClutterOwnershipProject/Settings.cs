@@ -10,7 +10,7 @@ namespace ClutterOwnershipSynthesisPatcher
     {
 
         [DisplayName("Owners to never assign")]
-        [Description("Substring match against the owning NPC or Faction's EditorID. Already-owned objects whose owner matches one of these terms are ignored entirely when tallying votes — they can never influence or become the majority owner. Useful for excluding pseudo-ownership markers (like the Player or PlayerFaction) that don't represent a real household/shop owner.")]
+        [Description("Match against the owning NPC or Faction's EditorID. Already-owned objects whose owner matches one of these terms are ignored entirely when tallying votes — they can never influence or become the majority owner. Useful for excluding pseudo-ownership markers (like the Player or PlayerFaction) that don't represent a real household/shop owner.")]
         [JsonProperty]
         public List<string> ExcludeOwnerNames { get; set; } =
         [
@@ -23,15 +23,15 @@ namespace ClutterOwnershipSynthesisPatcher
         public int MinimumOwnedObjectsForMajority { get; set; } = 1;
 
         [DisplayName("Names to exclude")]
-        [Description("Substring match against the placed object's Base EditorID. Loose items you never want touched regardless of cell ownership (e.g. Gold, Lockpicks, quest-critical keys).")]
+        [Description("Match against the placed object's Base EditorID. Loose items you never want touched regardless of cell ownership (e.g. Gold, Lockpicks, quest-critical keys).")]
         [JsonProperty]
         public List<string> ExcludeNameTerms { get; set; } =
         [
-            "Axe01", "weapPickaxe", "Bandit", "Treas", "Dummy", "Test", 
+            "Bandit", "Treas", "Dummy", "Test", 
         ];
 
         [DisplayName("Plugins to exclude")]
-        [Description("Substring match against the plugin's name. Plugins matching any of these terms will be ignored entirely.")]
+        [Description("Match against the plugin's name. Plugins matching any of these terms will be ignored entirely.")]
         [JsonProperty]
         public List<string> ExcludePlugins { get; set; } =
         [
@@ -39,11 +39,11 @@ namespace ClutterOwnershipSynthesisPatcher
         ];
 
         [DisplayName("Cells to exclude")]
-        [Description("Substring match against the cell's EditorID. Cells matching any of these terms will be ignored entirely.")]
+        [Description("Match against the cell's EditorID. Cells matching any of these terms will be ignored entirely.")]
         [JsonProperty]
         public List<string> ExcludeCellRules { get; set; } =
         [
-            "BYOH", "Helgen", "GuardianStones", 
+            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters",
         ];
 
         [DisplayName("Location Types to exclude")]
@@ -52,7 +52,7 @@ namespace ClutterOwnershipSynthesisPatcher
         public List<string> ExcludeLocTypeRules { get; set; } =
         [
             "Dungeon", "AnimalDen", "Bandit", "Dragonlair", "Draugr", "Dwarven",
-            "Falmer", "Giant", "Hagraven", "Spriggan", "Vampire", "Warlock",
+            "Falmer", "GiantCamp", "Hagraven", "Spriggan", "Vampire", "Warlock",
             "Werewolf", "Forsworn", "Cave", "Ruin", "PlayerHouse", "Lair",
         ];
     }
