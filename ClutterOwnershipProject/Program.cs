@@ -241,23 +241,26 @@ namespace ClutterOwnershipSynthesisPatcher
                 
                 // Cell exclusion.
                 bool cellExcluded = false;
-                foreach (var rule in settings.ExcludeCellRules)
+                if (!hasManualRule)
                 {
-                    if (RuleMatchesCell(rule, cellEdid))
+                    foreach (var rule in settings.ExcludeCellRules)
                     {
-                        cellExcluded = true;
-                        if (!excludedCellsByRule.TryGetValue(rule, out var cellList))
-                            excludedCellsByRule[rule] = cellList = [];
+                        if (RuleMatchesCell(rule, cellEdid))
+                        {
+                            cellExcluded = true;
+                            if (!excludedCellsByRule.TryGetValue(rule, out var cellList))
+                                excludedCellsByRule[rule] = cellList = [];
 
-                        cellList.Add(itemEdid);
-                        break;
+                            cellList.Add(itemEdid);
+                            break;
+                        }
                     }
                 }
 
                 // Location-type exclusion (matched against LocType-prefixed keywords only, e.g.
                 // LocTypeDungeon — deliberately ignoring unrelated keyword data like Civil War or
                 // world-interaction flags that can share vocabulary with these terms).
-                if (!cellExcluded && settings.ExcludeLocTypeRules.Count > 0)
+                if (!hasManualRule && !cellExcluded && settings.ExcludeLocTypeRules.Count > 0)
                 {
                     var location = containingCell.Location.TryResolve(state.LinkCache);
                     var keywordEdids = location?.Keywords?
@@ -374,45 +377,74 @@ namespace ClutterOwnershipSynthesisPatcher
             int belowThresholdCount = 0;
             var patchedItemsByCell = new Dictionary<string, List<(string Item, string Plugin, string OwnerLabel)>>(StringComparer.OrdinalIgnoreCase);
             var patchedItemTypeCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            var cellVoteInfo = new Dictionary<string, (int WinningVotes, int TotalVotes)>(StringComparer.OrdinalIgnoreCase);
+            var cellDecisionInfo = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var (cellFormKey, candidates) in candidatesByCell)
             {
-                if (!ownerCountsByCell.TryGetValue(cellFormKey, out var ownerCounts) || ownerCounts.Count == 0)
-                {
-                    noOwnershipDataCount += candidates.Count;
-                    continue;
-                }
-
-                int totalOwnedInCell = ownerCounts.Values.Sum();
-                if (totalOwnedInCell < settings.MinimumOwnedObjectsForMajority)
-                {
-                    belowThresholdCount += candidates.Count;
-                    continue;
-                }
-
-                var majorityOwnerFormKey = PickMajorityOwner(ownerCounts, state.LinkCache);
-
-                if (!state.LinkCache.TryResolve<IOwnerGetter>(majorityOwnerFormKey, out var ownerRecord))
-                {
-                    // The winning owner FormKey didn't resolve to something ownable — shouldn't
-                    // normally happen, but skip defensively rather than throw mid-patch.
-                    noOwnershipDataCount += candidates.Count;
-                    continue;
-                }
-
-                rankCountsByCellOwner.TryGetValue((cellFormKey, majorityOwnerFormKey), out var rankCounts);
-                int rankToApply = PickRepresentativeRank(rankCounts);
-
-                var ownerLabel = (ownerRecord as IMajorRecordGetter)?.EditorID ?? majorityOwnerFormKey.ToString();
                 var cellLabelForReport = state.LinkCache.TryResolve<ICellGetter>(cellFormKey, out var reportCell)
                     ? (reportCell.EditorID ?? "Unknown cell")
                     : "Unknown cell";
 
-                // How many of the cell's owned eligible objects actually voted for the winning
-                // owner, out of how many owned objects (that counted as votes) were in the cell at all.
-                ownerCounts.TryGetValue(majorityOwnerFormKey, out var winningVotes);
-                cellVoteInfo[cellLabelForReport] = (winningVotes, totalOwnedInCell);
+                // A manual rule preempts the vote entirely: the configured owner wins outright,
+                // even in a cell with zero (or contradictory) existing ownership data.
+                var manualRule = settings.ManualCellOwners.FirstOrDefault(r =>
+                    !string.IsNullOrWhiteSpace(r.Cell)
+                    && !string.IsNullOrWhiteSpace(r.Owner)
+                    && cellLabelForReport.Contains(r.Cell, StringComparison.OrdinalIgnoreCase));
+
+                IOwnerGetter ownerRecord;
+                int rankToApply;
+
+                if (manualRule != null)
+                {
+                    if (!state.LinkCache.TryResolve<IOwnerGetter>(manualRule.Owner, out var manualOwner))
+                    {
+                        ConsoleWriteLine($"WARNING: Manual owner \"{manualRule.Owner}\" (for cell rule \"{manualRule.Cell}\") does not resolve to an NPC or Faction — skipping {cellLabelForReport}.");
+                        continue;
+                    }
+
+                    ownerRecord = manualOwner;
+                    rankToApply = 0;
+                    cellDecisionInfo[cellLabelForReport] = "   [manual ownership rule]";
+                }
+                else
+                {
+                    if (!ownerCountsByCell.TryGetValue(cellFormKey, out var ownerCounts) || ownerCounts.Count == 0)
+                    {
+                        noOwnershipDataCount += candidates.Count;
+                        continue;
+                    }
+
+                    int totalOwnedInCell = ownerCounts.Values.Sum();
+                    if (totalOwnedInCell < settings.MinimumOwnedObjectsForMajority)
+                    {
+                        belowThresholdCount += candidates.Count;
+                        continue;
+                    }
+
+                    var majorityOwnerFormKey = PickMajorityOwner(ownerCounts, state.LinkCache);
+
+                    if (!state.LinkCache.TryResolve<IOwnerGetter>(majorityOwnerFormKey, out var majorityOwner))
+                    {
+                        // The winning owner FormKey didn't resolve to something ownable — shouldn't
+                        // normally happen, but skip defensively rather than throw mid-patch.
+                        noOwnershipDataCount += candidates.Count;
+                        continue;
+                    }
+
+                    ownerRecord = majorityOwner;
+
+                    rankCountsByCellOwner.TryGetValue((cellFormKey, majorityOwnerFormKey), out var rankCounts);
+                    rankToApply = PickRepresentativeRank(rankCounts);
+
+                    // How many of the cell's owned eligible objects actually voted for the winning
+                    // owner, out of how many owned objects (that counted as votes) were in the cell at all.
+                    ownerCounts.TryGetValue(majorityOwnerFormKey, out var winningVotes);
+                    cellDecisionInfo[cellLabelForReport] = $"   [decided by {winningVotes}/{totalOwnedInCell} owned objects]";
+                }
+
+                var ownerLabel = (ownerRecord as IMajorRecordGetter)?.EditorID
+                    ?? (manualRule != null ? manualRule.Owner : ownerRecord.ToString() ?? "Unknown owner");
 
                 foreach (var (context, itemEdid) in candidates)
                 {
@@ -441,7 +473,7 @@ namespace ClutterOwnershipSynthesisPatcher
             PrintReport(
                 patchedItemsByCell,
                 patchedItemTypeCounts,
-                cellVoteInfo,
+                cellDecisionInfo,
                 excludedCropsByPlugin,
                 excludedCellsByRule,
                 excludedLocTypesByRule,
@@ -507,7 +539,7 @@ namespace ClutterOwnershipSynthesisPatcher
         private static void PrintReport(
             Dictionary<string, List<(string Item, string Plugin, string OwnerLabel)>> patchedItemsByCell,
             Dictionary<string, int> patchedItemTypeCounts,
-            Dictionary<string, (int WinningVotes, int TotalVotes)> cellVoteInfo,
+            Dictionary<string, string> cellDecisionInfo,
             Dictionary<string, List<string>> excludedItemsByPlugin,
             Dictionary<string, List<string>> excludedCellsByRule,
             Dictionary<string, List<string>> excludedLocTypesByRule,
@@ -532,9 +564,7 @@ namespace ClutterOwnershipSynthesisPatcher
                 var cellLabel = kvp.Key;
                 var items = kvp.Value;
 
-                var voteLabel = cellVoteInfo.TryGetValue(cellLabel, out var votes)
-                    ? $"   [decided by {votes.WinningVotes}/{votes.TotalVotes} owned objects]"
-                    : "";
+                var voteLabel = cellDecisionInfo.TryGetValue(cellLabel, out var decision) ? decision : "";
 
                 ConsoleWriteLine($"{cellLabel}   ({items.Count} patched){voteLabel}");
 
