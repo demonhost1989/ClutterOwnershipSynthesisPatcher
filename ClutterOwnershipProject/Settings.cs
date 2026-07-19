@@ -47,6 +47,7 @@ namespace ClutterOwnershipProject
             new() { Cell = "Dawnguard", Owner = "DLC1DawnguardFaction" },
             new() { Cell = "MarkarthSide", Owner = "TownMarkarthSideFaction" },
             new() { Cell = "Nightgate", Owner = "Hadring" },
+  
         //  new() { Cell = "BlackBriarLodge", Owner = "RiftenBlackBriarHouseFaction" },
         ];
         
@@ -55,7 +56,8 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeNameTerms { get; set; } =
         [
-            "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook", "CWR", "BottleEmpty", "Empty",
+            "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook", "CWR", "BottleEmpty", 
+            "BeeHive", "MMX", "Empty", 
         ];
 
         [DisplayName("Plugins to exclude")]
@@ -71,7 +73,8 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeCellRules { get; set; } =
         [
-            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters", "DrelasCottage", "BlackBriarLodge", "Goldenglow",
+            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters", "DrelasCottage", "BlackBriarLodge", "Goldenglow", "ShrineofAzura",
+            "Cave", "HallOfTheDead", 
         ];
 
         [DisplayName("Location Types to exclude")]
