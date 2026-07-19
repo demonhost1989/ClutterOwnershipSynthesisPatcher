@@ -47,7 +47,7 @@ namespace ClutterOwnershipProject
             new() { Cell = "Dawnguard", Owner = "DLC1DawnguardFaction" },
             new() { Cell = "MarkarthSide", Owner = "TownMarkarthSideFaction" },
             new() { Cell = "Nightgate", Owner = "Hadring" },
-            new() { Cell = "BlackBriarLodge", Owner = "RiftenBlackBriarHouseFaction" },
+        //  new() { Cell = "BlackBriarLodge", Owner = "RiftenBlackBriarHouseFaction" },
         ];
         
         [DisplayName("Names to exclude")]
@@ -55,7 +55,7 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeNameTerms { get; set; } =
         [
-            "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook", "CWR", "BottleEmpty", 
+            "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook", "CWR", "BottleEmpty", "Empty",
         ];
 
         [DisplayName("Plugins to exclude")]
@@ -71,7 +71,7 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeCellRules { get; set; } =
         [
-            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters", "DrelasCottage", 
+            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters", "DrelasCottage", "BlackBriarLodge", "Goldenglow",
         ];
 
         [DisplayName("Location Types to exclude")]
@@ -81,7 +81,7 @@ namespace ClutterOwnershipProject
         [
             "Dungeon", "AnimalDen", "Bandit", "Dragonlair", "Draugr", "Dwarven",
             "Falmer", "GiantCamp", "Hagraven", "Spriggan", "Vampire", "Warlock",
-            "Werewolf", "Forsworn", "Cave", "Ruin", "PlayerHouse", "Lair",
+            "Werewolf", "Forsworn", "Cave", "Ruin", "PlayerHouse", "Lair", "Fort", 
         ];
     }
 }
