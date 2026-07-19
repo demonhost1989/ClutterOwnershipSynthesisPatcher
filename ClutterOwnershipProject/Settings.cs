@@ -55,7 +55,7 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeNameTerms { get; set; } =
         [
-            "Bandit", "Treas", "Dummy", "Test", 
+            "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook", "CWR", "BottleEmpty", 
         ];
 
         [DisplayName("Plugins to exclude")]
