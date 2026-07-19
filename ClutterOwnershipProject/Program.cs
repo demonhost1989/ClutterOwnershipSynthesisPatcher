@@ -172,7 +172,7 @@ namespace ClutterOwnershipSynthesisPatcher
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
             // Flag the output plugin as a Master (ESM) on every build.
-            state.PatchMod.ModHeader.Flags |= SkyrimModHeader.HeaderFlag.Master;
+            // state.PatchMod.ModHeader.Flags |= SkyrimModHeader.HeaderFlag.Master;
 
             var settings = LoadRunSettings(state);
 
