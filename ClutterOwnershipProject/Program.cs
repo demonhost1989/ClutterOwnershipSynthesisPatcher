@@ -90,20 +90,15 @@ namespace ClutterOwnershipSynthesisPatcher
         }
 
         // ------------------------------------------------------------------
-        // Base record classification (MISC / CONT / BOOK / AMMO / SCRL / other)
+        // Base record classification (MISC / BOOK / SCRL / other)
         // ------------------------------------------------------------------
-        //
-        // ALCH (consumables) is deliberately NOT handled here — it moved to the sibling
-        // ConsumablesOwnershipPatcher project to keep each patcher's output plugin small enough
-        // to stay well under the game engine's per-plugin record limit in large load orders.
+
 
         private enum RecordKind
         {
             Other,
             MiscItem,
-            Container,
             Book,
-            Ammunition,
             Scroll,
         }
 
@@ -120,7 +115,6 @@ namespace ClutterOwnershipSynthesisPatcher
             var kind = baseRecord switch
             {
                 IMiscItemGetter => RecordKind.MiscItem,
-                IContainerGetter => RecordKind.Container,
                 IBookGetter => RecordKind.Book,
                 IScrollGetter => RecordKind.Scroll,
                 _ => RecordKind.Other,
@@ -710,7 +704,7 @@ namespace ClutterOwnershipSynthesisPatcher
 
             PrintDivider();
             ConsoleWriteLine("Patching is complete! Scroll up to read a report on what was patched and why anything was skipped.");
-            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/CONT/BOOK/SCRL objects to learn a pattern from.");
+            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/BOOK/SCRL objects to learn a pattern from.");
             ConsoleWriteLine("\"Below threshold\" means the cell had SOME ownership data, but fewer owned objects than MinimumOwnedObjectsForMajority.");
             PrintDivider();
         }
