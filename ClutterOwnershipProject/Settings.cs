@@ -47,6 +47,9 @@ namespace ClutterOwnershipProject
             new() { Cell = "Dawnguard", Owner = "DLC1DawnguardFaction" },
             new() { Cell = "MarkarthSide", Owner = "TownMarkarthSideFaction" },
             new() { Cell = "Nightgate", Owner = "Hadring" },
+            new() { Cell = "HalloftheVigilant", Owner = "VigilantOfStendarrFaction" },
+            new() { Cell = "RavenRock", Owner = "DLC2RRBulwarkFaction" },
+            
   
         //  new() { Cell = "BlackBriarLodge", Owner = "RiftenBlackBriarHouseFaction" },
         ];
@@ -56,8 +59,8 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeNameTerms { get; set; } =
         [
-            "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook", "CWR", "BottleEmpty", 
-            "BeeHive", "MMX", "Empty", 
+            "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook",  
+            "BeeHive", "MMX", "Empty", "CWR", "BottleEmpty",
         ];
 
         [DisplayName("Plugins to exclude")]
@@ -65,7 +68,7 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludePlugins { get; set; } =
         [
-            "Vigilant", "SkyrimUnderground", "HearthFire", "Glenmoril", "GodsAndWorship",
+            "Vigilant", "SkyrimUnderground", "HearthFire", "Glenmoril", "GodsAndWorship", "GNW", 
         ];
 
         [DisplayName("Cells to exclude")]
@@ -73,8 +76,8 @@ namespace ClutterOwnershipProject
         [JsonProperty]
         public List<string> ExcludeCellRules { get; set; } =
         [
-            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters", "DrelasCottage", "BlackBriarLodge", "Goldenglow", "ShrineofAzura",
-            "Cave", "HallOfTheDead", 
+            "BYOH", "Helgen", "GuardianStones", "RiftenThievesGuildHeadquarters", "DrelasCottage", "BlackBriarLodge", "Goldenglow", 
+            "Cave", "ShrineofAzura",
         ];
 
         [DisplayName("Location Types to exclude")]

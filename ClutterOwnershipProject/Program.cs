@@ -90,15 +90,18 @@ namespace ClutterOwnershipSynthesisPatcher
         }
 
         // ------------------------------------------------------------------
-        // Base record classification (MISC / CONT / ALCH / BOOK / AMMO / SCRL / other)
+        // Base record classification (MISC / CONT / BOOK / AMMO / SCRL / other)
         // ------------------------------------------------------------------
+        //
+        // ALCH (consumables) is deliberately NOT handled here — it moved to the sibling
+        // ConsumablesOwnershipPatcher project to keep each patcher's output plugin small enough
+        // to stay well under the game engine's per-plugin record limit in large load orders.
 
         private enum RecordKind
         {
             Other,
             MiscItem,
             Container,
-            Ingestible,
             Book,
             Ammunition,
             Scroll,
@@ -118,7 +121,6 @@ namespace ClutterOwnershipSynthesisPatcher
             {
                 IMiscItemGetter => RecordKind.MiscItem,
                 IContainerGetter => RecordKind.Container,
-                IIngestibleGetter => RecordKind.Ingestible,
                 IBookGetter => RecordKind.Book,
                 IScrollGetter => RecordKind.Scroll,
                 _ => RecordKind.Other,
@@ -163,6 +165,49 @@ namespace ClutterOwnershipSynthesisPatcher
                 return 0;
 
             return rankCounts.OrderByDescending(kv => kv.Value).First().Key;
+        }
+
+        // Checks whether a cell record carries a usable Owner of its own — i.e. one not matched by
+        // ExcludeOwnerNames. Mirrors the per-object owner-name exclusion applied during voting, so a
+        // cell whose direct owner is e.g. "Player" or "PlayerFaction" is treated as having no
+        // cell-level ownership data, falling through to the object vote instead.
+        private static bool TryGetUsableCellOwner(
+            ICellGetter? cell,
+            Settings settings,
+            ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache,
+            Dictionary<FormKey, string?> ownerEdidCache,
+            out IOwnerGetter ownerRecord,
+            out int rank)
+        {
+            ownerRecord = null!;
+            rank = 0;
+
+            if (cell == null || cell.Owner.IsNull)
+                return false;
+
+            if (cell.Owner.FormKeyNullable is not { } ownerFormKey)
+                return false;
+
+            if (!ownerEdidCache.TryGetValue(ownerFormKey, out var ownerEdid))
+            {
+                ownerEdid = linkCache.TryResolve<IMajorRecordGetter>(ownerFormKey, out var ownerRec)
+                    ? ownerRec.EditorID
+                    : null;
+                ownerEdidCache[ownerFormKey] = ownerEdid;
+            }
+
+            bool ownerIsExcluded = ownerEdid != null
+                && settings.ExcludeOwnerNames.Any(term => ownerEdid.Contains(term, StringComparison.OrdinalIgnoreCase));
+
+            if (ownerIsExcluded)
+                return false;
+
+            if (!linkCache.TryResolve<IOwnerGetter>(ownerFormKey, out var resolved))
+                return false;
+
+            ownerRecord = resolved;
+            rank = cell.FactionRank ?? 0;
+            return true;
         }
 
         // ------------------------------------------------------------------
@@ -230,7 +275,7 @@ namespace ClutterOwnershipSynthesisPatcher
 
                 var cellEdid = containingCell.EditorID ?? "Unknown cell";
                 var cellFormKey = containingCell.FormKey;
-                
+
                 // Manual ownership rules trump the cell-level exclusion rules — a cell the user
                 // explicitly mapped to an owner is patched even if a cell or location-type
                 // exclusion would normally skip it (name/plugin exclusions still apply).
@@ -238,7 +283,7 @@ namespace ClutterOwnershipSynthesisPatcher
                     !string.IsNullOrWhiteSpace(r.Cell)
                     && !string.IsNullOrWhiteSpace(r.Owner)
                     && cellEdid.Contains(r.Cell, StringComparison.OrdinalIgnoreCase));
-                
+
                 // Cell exclusion.
                 bool cellExcluded = false;
                 if (!hasManualRule)
@@ -406,6 +451,14 @@ namespace ClutterOwnershipSynthesisPatcher
                     ownerRecord = manualOwner;
                     rankToApply = 0;
                     cellDecisionInfo[cellLabelForReport] = "   [manual ownership rule]";
+                }
+                else if (TryGetUsableCellOwner(reportCell, settings, state.LinkCache, ownerEdidCache, out var cellOwner, out var cellRank))
+                {
+                    // The cell record itself carries an Owner — trust it directly rather than
+                    // inferring one from a vote among the objects inside it.
+                    ownerRecord = cellOwner;
+                    rankToApply = cellRank;
+                    cellDecisionInfo[cellLabelForReport] = "   [cell-level ownership]";
                 }
                 else
                 {
@@ -657,7 +710,7 @@ namespace ClutterOwnershipSynthesisPatcher
 
             PrintDivider();
             ConsoleWriteLine("Patching is complete! Scroll up to read a report on what was patched and why anything was skipped.");
-            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/CONT/ALCH/BOOK/SCRL objects to learn a pattern from.");
+            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/CONT/BOOK/SCRL objects to learn a pattern from.");
             ConsoleWriteLine("\"Below threshold\" means the cell had SOME ownership data, but fewer owned objects than MinimumOwnedObjectsForMajority.");
             PrintDivider();
         }
