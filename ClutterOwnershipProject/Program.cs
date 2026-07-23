@@ -302,9 +302,12 @@ namespace ClutterOwnershipSynthesisPatcher
                 if (!hasManualRule && !cellExcluded && settings.ExcludeLocTypeRules.Count > 0)
                 {
                     var location = containingCell.Location.TryResolve(state.LinkCache);
+                    var locPrefixes = new[] { "LocType", "LocSet" };
+
                     var keywordEdids = location?.Keywords?
                         .Select(k => k.TryResolve(state.LinkCache)?.EditorID)
-                        .Where(e => e != null && e.StartsWith("LocType", StringComparison.OrdinalIgnoreCase))
+                        .Where(e => e != null &&
+                                    locPrefixes.Any(p => e.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
                         .Select(e => e!)
                         .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -703,9 +706,9 @@ namespace ClutterOwnershipSynthesisPatcher
             }
 
             PrintDivider();
-            ConsoleWriteLine("Patching is complete! Scroll up to read a report on what was patched and why anything was skipped.");
-            ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/BOOK/SCRL objects to learn a pattern from.");
-            ConsoleWriteLine("\"Below threshold\" means the cell had SOME ownership data, but fewer owned objects than MinimumOwnedObjectsForMajority.");
+            ConsoleWriteLine("Patching is complete! Scroll up to read the report.");
+            //    ConsoleWriteLine("\"No ownership data\" means the cell had zero already-owned MISC/BOOK/SCRL objects to learn a pattern from.");
+            //    ConsoleWriteLine("\"Below threshold\" means the cell had SOME ownership data, but fewer owned objects than MinimumOwnedObjectsForMajority.");
             PrintDivider();
         }
 

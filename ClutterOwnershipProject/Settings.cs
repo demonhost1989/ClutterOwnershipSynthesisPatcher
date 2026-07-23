@@ -60,7 +60,7 @@ namespace ClutterOwnershipProject
         public List<string> ExcludeNameTerms { get; set; } =
         [
             "Bandit", "Treas", "Dummy", "Test", "Merchant", "_chest", "EmptySkoomaBottle", "RuinedBook", "BYOH", "BurnedBook",  
-            "BeeHive", "MMX", "Empty", "CWR", "BottleEmpty",
+            "BeeHive", "MMX", "Empty", "CWR", "BottleEmpty", "Basic", "Default", "BloodyRags", "Spigot", "Ruins", 
         ];
 
         [DisplayName("Plugins to exclude")]
@@ -81,13 +81,13 @@ namespace ClutterOwnershipProject
         ];
 
         [DisplayName("Location Types to exclude")]
-        [Description("Matched only against the location's LocType-prefixed keywords (e.g. LocTypeDungeon) — unrelated keyword data like Civil War or world-interaction flags is deliberately ignored.")]
+        [Description("Matched only against the location's LocType/LocSet-prefixed keywords (e.g. LocTypeDungeon) — unrelated keyword data like Civil War or world-interaction flags is deliberately ignored.")]
         [JsonProperty]
         public List<string> ExcludeLocTypeRules { get; set; } =
         [
-            "Dungeon", "AnimalDen", "Bandit", "Dragonlair", "Draugr", "Dwarven",
-            "Falmer", "GiantCamp", "Hagraven", "Spriggan", "Vampire", "Warlock",
-            "Werewolf", "Forsworn", "Cave", "Ruin", "PlayerHouse", "Lair", "Fort", 
+            "Dungeon", "AnimalDen", "Bandit", "Dragonlair", "Draugr", "Dwarven", "Mine",
+            "Falmer", "GiantCamp", "Hagraven", "Spriggan", "Vampire", "Warlock", "Shipwreck",
+            "Werewolf", "Forsworn", "Cave", "Ruin", "PlayerHouse", "Lair", "Fort", "Clearable",
         ];
     }
 }
